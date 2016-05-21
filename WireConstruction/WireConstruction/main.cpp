@@ -16,18 +16,18 @@ int main(int argc, char **argv)
 	CRoom room(3, 2, 2);
 	
 	room.AddInput(GNode(0, 0, 0));
-	//room.AddInput(GNode(0, 0, 2));
+	room.AddInput(GNode(0, 0, 2));
+	room.AddInput(GNode(0, 3, 1));
 	//room.AddInput(GNode(0, 1, 1));
 	//room.AddInput(GNode(2, 1, 1));
-	room.AddInput(GNode(1, 3, 1));
+	//room.AddInput(GNode(1, 3, 1));
 	room.n_train();
 
-	// !!! 1 и 4 не работают вместе (нужно доработать
 	/// Иногда получается больше точек, чем нужно. Это происходит из-за того, 
 	/// что оптимальных маршрутов несколько.
 
 	// Генерируем файл для экспорта в Matlab, чтобы там всё нарисовать :)
-	ExportFile(&room, "nodes.txt");
+ 	ExportFile(&room, "nodes.txt");  
 	_getch();
 	return 0;
 }

@@ -332,9 +332,9 @@ float CRoom::SLength(CNode X1, CNode X2)
 			X2 = tmp;
 		}
 		if (X2.edge == 'T')
-			return height - X1.y + X2.y + fabsf(X1.x - X2.x);
+			return height - X1.y + X2.y + fabsf(width - X1.x - X2.x);
 		else if (X2.edge == 'B')
-			return X1.y + X2.y + fabsf(X1.x - X2.x);
+			return X1.y + X2.y + fabsf(width - X1.x - X2.x);
 	}
 	else if ((X1.edge == 'B' && X2.edge == 'T') || (X1.edge == 'T' && X2.edge == 'B'))
 	{
@@ -462,41 +462,56 @@ void CRoom::GenerateGrid()
 				break;
 
 			GNode cur_node2 = *(iterator2);
-			if (cur_node.edge == cur_node2.edge 
-				&& cur_node.edge != 'X' && cur_node.edge != 'Y' && cur_node.edge != 'Z')
+			if (cur_node.edge != 'X' && cur_node.edge != 'Y' && cur_node.edge != 'Z')
 			{
-				if (cur_node.edge == 'N' || cur_node.edge == 'S')
+				if (cur_node.edge == cur_node2.edge)
 				{
-					AddNode(GNode(0, cur_node.y, cur_node.z, 'N'));
-					AddNode(GNode(0, cur_node.y, cur_node2.z, 'N'));
-					AddNode(GNode(0, cur_node2.y, cur_node.z, 'N'));
-					AddNode(GNode(0, cur_node2.y, cur_node2.z, 'N'));
-					AddNode(GNode(length, cur_node.y, cur_node.z, 'S'));
-					AddNode(GNode(length, cur_node.y, cur_node2.z, 'S'));
-					AddNode(GNode(length, cur_node2.y, cur_node.z, 'S'));
-					AddNode(GNode(length, cur_node2.y, cur_node2.z, 'S'));
+					if (cur_node.edge == 'N' || cur_node.edge == 'S')
+					{
+						AddNode(GNode(0, cur_node.y, cur_node.z, 'N'));
+						AddNode(GNode(0, cur_node.y, cur_node2.z, 'N'));
+						AddNode(GNode(0, cur_node2.y, cur_node.z, 'N'));
+						AddNode(GNode(0, cur_node2.y, cur_node2.z, 'N'));
+						AddNode(GNode(length, cur_node.y, cur_node.z, 'S'));
+						AddNode(GNode(length, cur_node.y, cur_node2.z, 'S'));
+						AddNode(GNode(length, cur_node2.y, cur_node.z, 'S'));
+						AddNode(GNode(length, cur_node2.y, cur_node2.z, 'S'));
+					}
+					else if (cur_node.edge == 'W' || cur_node.edge == 'E')
+					{
+						AddNode(GNode(cur_node.x, 0, cur_node.z, 'W'));
+						AddNode(GNode(cur_node.x, 0, cur_node2.z, 'W'));
+						AddNode(GNode(cur_node2.x, 0, cur_node.z, 'W'));
+						AddNode(GNode(cur_node2.x, 0, cur_node2.z, 'W'));
+						AddNode(GNode(cur_node.x, width, cur_node.z, 'E'));
+						AddNode(GNode(cur_node.x, width, cur_node2.z, 'E'));
+						AddNode(GNode(cur_node2.x, width, cur_node.z, 'E'));
+						AddNode(GNode(cur_node2.x, width, cur_node2.z, 'E'));
+					}
+					else if (cur_node.edge == 'B' || cur_node.edge == 'T')
+					{
+						AddNode(GNode(cur_node.x, cur_node.y, 0, 'B'));
+						AddNode(GNode(cur_node.x, cur_node2.y, 0, 'B'));
+						AddNode(GNode(cur_node2.x, cur_node.y, 0, 'B'));
+						AddNode(GNode(cur_node2.x, cur_node2.y, 0, 'B'));
+						AddNode(GNode(cur_node.x, cur_node.y, height, 'T'));
+						AddNode(GNode(cur_node.x, cur_node2.y, height, 'T'));
+						AddNode(GNode(cur_node2.x, cur_node.y, height, 'T'));
+						AddNode(GNode(cur_node2.x, cur_node2.y, height, 'T'));
+					}
 				}
-				else if (cur_node.edge == 'W' || cur_node.edge == 'E')
+				else
 				{
-					AddNode(GNode(cur_node.x, 0, cur_node.z, 'W'));
-					AddNode(GNode(cur_node.x, 0, cur_node2.z, 'W'));
-					AddNode(GNode(cur_node2.x, 0, cur_node.z, 'W'));
-					AddNode(GNode(cur_node2.x, 0, cur_node2.z, 'W'));
-					AddNode(GNode(cur_node.x, width, cur_node.z, 'E'));
-					AddNode(GNode(cur_node.x, width, cur_node2.z, 'E'));
-					AddNode(GNode(cur_node2.x, width, cur_node.z, 'E'));
-					AddNode(GNode(cur_node2.x, width, cur_node2.z, 'E'));
-				}
-				else if (cur_node.edge == 'B' || cur_node.edge == 'T')
-				{
-					AddNode(GNode(cur_node.x, cur_node.y, 0, 'B'));
-					AddNode(GNode(cur_node.x, cur_node2.y, 0, 'B'));
-					AddNode(GNode(cur_node2.x, cur_node.y, 0, 'B'));
-					AddNode(GNode(cur_node2.x, cur_node2.y, 0, 'B'));
-					AddNode(GNode(cur_node.x, cur_node.y, height, 'T'));
-					AddNode(GNode(cur_node.x, cur_node2.y, height, 'T'));
-					AddNode(GNode(cur_node2.x, cur_node.y, height, 'T'));
-					AddNode(GNode(cur_node2.x, cur_node2.y, height, 'T'));
+					if ((cur_node.edge == 'N' || cur_node.edge == 'S') && (cur_node2.edge == 'E' || cur_node2.edge == 'W'))
+					{
+						AddNode(GNode(cur_node2.x, cur_node.y, 0));
+						AddNode(GNode(cur_node2.x, cur_node.y, height));
+					}
+					else if ((cur_node2.edge == 'N' || cur_node2.edge == 'S') && (cur_node.edge == 'E' || cur_node.edge == 'W'))
+					{
+						AddNode(GNode(cur_node.x, cur_node2.y, 0));
+						AddNode(GNode(cur_node.x, cur_node2.y, height));
+					}
 				}
 			}
 		}
@@ -841,8 +856,10 @@ void CRoom::n_train()
 
 	std::cout << "Training starts." << endl;
 
+	//AddNode(GNode(1, 1, 0));
+
 	// јлгоритм работает пока не будет превышено максимальное кол-во эпох и пока происход€т изменени€
-	while (epoch <= N_epochs || cng != 0) 
+	while (epoch <= N_epochs || cng != 0)
 	{
 		if (cng == 0)
 			break;
@@ -854,7 +871,7 @@ void CRoom::n_train()
 		{
 			GNode &cur_node = *net_iterator;
 
-			if (cur_node.x == 2 && cur_node.y == 0 && cur_node.z == 1)
+			if (cur_node.x == 2 && cur_node.y == 1 && cur_node.z == 0)
 			{
 				cout << endl;
 			}
@@ -983,21 +1000,21 @@ void CRoom::n_train()
 						GNode &cur_neighbour = **neighbour_iterator;
 						if (cur_neighbour.weight < 0)
 							continue;
+
 						float influence = 0;
 						if (min_len > SLength(GNodeToCNode(cur_neighbour), GNodeToCNode(*BMI)))
-						{
 							influence += 0.5; // + 0.5 за близость к BMI
-							std::vector<GNode *>::iterator n2_iterator = cur_neighbour.neighbours.begin();
-							for (; n2_iterator != cur_neighbour.neighbours.end(); n2_iterator++)
-							{
-								GNode &cur_n2 = **n2_iterator;
-								// «а каждого соседа, который имеет вес 1, мы прибавл€ем +1 к вли€тельности.
-								if (cur_n2.weight == 1)
-									influence += 1;
-							}
-							if (influence > max_influence)
-								max_influence = influence;
+						std::vector<GNode *>::iterator n2_iterator = cur_neighbour.neighbours.begin();
+						for (; n2_iterator != cur_neighbour.neighbours.end(); n2_iterator++)
+						{
+							GNode &cur_n2 = **n2_iterator;
+							// «а каждого соседа, который имеет вес 1, мы прибавл€ем +1 к вли€тельности.
+							if (cur_n2.weight == 1)
+								influence += 1;
 						}
+
+						if (influence > max_influence)
+							max_influence = influence;
 					}
 					// “еперь еще раз проходим и выбираем BMU
 					neighbour_iterator = cur_node.neighbours.begin();
@@ -1009,29 +1026,67 @@ void CRoom::n_train()
 							continue;
 						float influence = 0;
 						if (min_len > SLength(GNodeToCNode(cur_neighbour), GNodeToCNode(*BMI)))
-						{
 							influence += 0.5; // + 0.5 за близость к BMI
-							std::vector<GNode *>::iterator n2_iterator = cur_neighbour.neighbours.begin();
-							for (; n2_iterator != cur_neighbour.neighbours.end(); n2_iterator++)
-							{
-								GNode &cur_n2 = **n2_iterator;
-								// «а каждого соседа, который имеет вес 1, мы прибавл€ем +1 к вли€тельности.
-								if (cur_n2.weight == 1)
-									influence += 1;
-							}
-							if (influence == max_influence)
-							{
-								BMU = *neighbour_iterator;
-								cnt++;
-							}
+
+						std::vector<GNode *>::iterator n2_iterator = cur_neighbour.neighbours.begin();
+						for (; n2_iterator != cur_neighbour.neighbours.end(); n2_iterator++)
+						{
+							GNode &cur_n2 = **n2_iterator;
+							// «а каждого соседа, который имеет вес 1, мы прибавл€ем +1 к вли€тельности.
+							if (cur_n2.weight == 1)
+								influence += 1;
+						}
+
+						if (influence == max_influence)
+						{
+							BMU = *neighbour_iterator;
+							cnt++;
 						}
 					}
 
-					// ≈сли получилось более одного BMU, то ничего не двигаем
-					// ≈сли BMU = BMI и у BMI осталс€ только один сосед, то также ничего не двигаем
-					if (cnt != 1 || (*BMU == *BMI && BMI->neighbours.size() == 1))
+
+					// —читаем сумму рассто€ний от BMU и от текущей точки до всех входов
+					float distSumNode = 0;
+					float distSumBMU = 0;
+					std::vector<GNode>::const_iterator nn_it = Network.begin();
+					for (; nn_it != Network.begin() + n; nn_it++)
 					{
-						std::cout << "> There are more than one BMU!" << endl;
+						distSumNode += SLength(GNodeToCNode(cur_node), GNodeToCNode(*nn_it));
+						distSumBMU += SLength(GNodeToCNode(*BMU), GNodeToCNode(*nn_it));
+					}
+					// ≈сли сумма рассто€ний от BMU больше или равна сумме рассто€ний от текущей точки,
+					// то нашу точку не двигаем, т.к. она как бы одновременно ближе ко всем входам.
+					if (distSumBMU >= distSumNode)
+					{
+						BMU = nullptr;
+						net_iterator++;
+						continue;
+					}
+
+					// ѕеред тем, как двигать, посмотрим на соседей-входов и, если они есть, посчитаем,
+					// сколько у них осталось соседей. ≈сли один, то не двигаемс€.
+					int f = 0;
+					neighbour_iterator = cur_node.neighbours.begin();
+					for (; neighbour_iterator != cur_node.neighbours.end(); neighbour_iterator++)
+					{
+						std::vector<GNode>::iterator nn_it = Network.begin();
+						for (; nn_it != Network.begin() + n; nn_it++)
+						{
+							if (*nn_it == **neighbour_iterator)
+							{
+								if (nn_it->neighbours.size() == 1)
+								{
+									f = 1;
+									break;
+								}
+							}
+						}
+						if (f)
+							break;
+					}
+					
+					if (f)
+					{
 						BMU = nullptr;
 						net_iterator++;
 						continue;
