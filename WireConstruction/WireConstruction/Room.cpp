@@ -2,7 +2,9 @@
 #include "Node.h"
 #include "GNode.h"
 #include <iostream>
+#include <fstream>
 #include <limits>
+#include <string>
 #include <conio.h>
 
 #include <math.h>
@@ -13,7 +15,8 @@ CRoom::CRoom(): n(0)
 {
 }
 
-CRoom::CRoom(float w, float l, float h) : width(w), length(l), height(h), n(0)
+CRoom::CRoom(float w, float l, float h, std::string path_out) : 
+	width(w), length(l), height(h), n(0), f_path_out(path_out)
 {
 }
 
@@ -186,6 +189,30 @@ CNode CRoom::GNodeToCNode(GNode T)
 		ret.x = T.y;
 		ret.y = length;
 	}
+	else if (T.y == 0 && T.z == 0)
+	{
+		ret.edge = 'W';
+		ret.x = length - T.x;
+		ret.y = 0;
+	}
+	else if (T.y == 0 && T.z == height)
+	{
+		ret.edge = 'W';
+		ret.x = length - T.x;
+		ret.y = height;
+	}
+	else if (T.y == width && T.z == 0)
+	{
+		ret.edge = 'E';
+		ret.x = T.x;
+		ret.y = 0;
+	}
+	else if (T.y == width && T.z == height)
+	{
+		ret.edge = 'E';
+		ret.x = T.x;
+		ret.y = height;
+	}
 	return ret;
 }
 
@@ -212,7 +239,7 @@ float CRoom::SLength(CNode X1, CNode X2)
 			X1 = X2;
 			X2 = tmp;
 		}
-		return X1.x + width - X2.x + fabsf(X1.y - X2.y);
+		return width - X1.x + X2.x + fabsf(X1.y - X2.y);
 	}
 	else if ((X1.edge == 'N' && X2.edge == 'W') || (X1.edge == 'W' && X2.edge == 'N'))
 	{
@@ -506,11 +533,13 @@ void CRoom::GenerateGrid()
 					{
 						AddNode(GNode(cur_node2.x, cur_node.y, 0));
 						AddNode(GNode(cur_node2.x, cur_node.y, height));
+						AddNode(GNode(cur_node.x, cur_node.y, cur_node2.z));
 					}
 					else if ((cur_node2.edge == 'N' || cur_node2.edge == 'S') && (cur_node.edge == 'E' || cur_node.edge == 'W'))
 					{
 						AddNode(GNode(cur_node.x, cur_node2.y, 0));
 						AddNode(GNode(cur_node.x, cur_node2.y, height));
+						AddNode(GNode(cur_node.x, cur_node.y, cur_node2.z));
 					}
 				}
 			}
@@ -759,7 +788,7 @@ void CRoom::LinkNeighbours(GNode *T1, GNode *T2)
 	}
 }
 
-void CRoom::RemoveNode(std::vector<GNode>::iterator &it)
+void CRoom::RemoveNode(GNode *it)
 {
 	std::cout << "> Removing node..." << endl;
 
@@ -856,8 +885,6 @@ void CRoom::n_train()
 
 	std::cout << "Training starts." << endl;
 
-	//AddNode(GNode(1, 1, 0));
-
 	// јлгоритм работает пока не будет превышено максимальное кол-во эпох и пока происход€т изменени€
 	while (epoch <= N_epochs || cng != 0)
 	{
@@ -871,10 +898,10 @@ void CRoom::n_train()
 		{
 			GNode &cur_node = *net_iterator;
 
-			if (cur_node.x == 2 && cur_node.y == 1 && cur_node.z == 0)
+			/*if (cur_node.x == 2 && cur_node.y == 1.5 && cur_node.z == 0)
 			{
 				cout << endl;
-			}
+			}*/
 
 			if (cur_node.weight < 0)
 			{
@@ -888,15 +915,15 @@ void CRoom::n_train()
 				net_iterator++;
 				continue;
 			}
-			if (cur_node.neighbours.size() == 1)
+			/*if (cur_node.neighbours.size() == 1 && !isInput(cur_node.neighbours[0]))
 			{
-				std::cout << "> Moving towards BMU..." << endl;
+				std::cout << "> Moving towards last neighbour..." << endl;
 				cur_node.neighbours[0]->weight = 1;
-				RemoveNode(net_iterator);
+				RemoveNode(&*net_iterator);
 				net_iterator = Network.begin() + n;
 				cng += 1;
 				continue;
-			}
+			}*/
 
 			// ¬ыбираем BMI
 			GNode *BMI = nullptr;
@@ -911,12 +938,6 @@ void CRoom::n_train()
 				// ѕриводим GNode'ы к CNode'ам дл€ использовани€ SLength
 				// —читаем рассто€ние между текущим нейроном и входом
 				float len = SLength(GNodeToCNode(cur_node), GNodeToCNode(cur_input));
-				
-				// ≈сли текущий нейрон и вход на одной "грани", то вычтем из рассто€ни€ малую величину.
-				// Ёто нужно, чтобы происходило меньше неопределенностей при выборе BMI, т.к. иногда случаетс€, что
-				// €вно видно оптимальный BMI, но алгоритм находит несколько, т.к. рассто€ние до них одинаково.
-				if (cur_node.edge == cur_input.edge)
-					len -= 0.1f;
 				
 				if (len < min_len)
 					min_len = len;
@@ -933,9 +954,7 @@ void CRoom::n_train()
 				// ѕриводим GNode'ы к CNode'ам дл€ использовани€ SLength
 				// —читаем рассто€ние между текущим нейроном и входом
 				float len = SLength(GNodeToCNode(cur_node), GNodeToCNode(cur_input));
-				// ≈сли текущий нейрон и вход на одной "грани", то вычтем из рассто€ни€ малую величину.
-				if (cur_node.edge == cur_input.edge)
-					len -= 0.1f;
+				
 				if (len == min_len)
 				{
 					cnt++;
@@ -966,7 +985,7 @@ void CRoom::n_train()
 						break;
 				}
 
-				if (f)
+				if (f || cnt != 1)
 				{
 					std::cout << "> There are more than one BMI!" << endl;
 					BMI = nullptr;
@@ -980,10 +999,10 @@ void CRoom::n_train()
 			if (BMI != nullptr)
 			{
 				// ≈сли сосед всего один, то двигаемс€ к нему
-				if (cur_node.neighbours.size() == 1)
+				if (cur_node.neighbours.size() == 1 && !isInput(cur_node.neighbours[0]))
 				{
 					cur_node.neighbours[0]->weight = 1;
-					RemoveNode(net_iterator);
+					RemoveNode(&*net_iterator);
 					net_iterator = Network.begin() + n;
 					cng += 1;
 				}
@@ -1003,16 +1022,17 @@ void CRoom::n_train()
 
 						float influence = 0;
 						if (min_len > SLength(GNodeToCNode(cur_neighbour), GNodeToCNode(*BMI)))
-							influence += 0.5; // + 0.5 за близость к BMI
-						std::vector<GNode *>::iterator n2_iterator = cur_neighbour.neighbours.begin();
-						for (; n2_iterator != cur_neighbour.neighbours.end(); n2_iterator++)
 						{
-							GNode &cur_n2 = **n2_iterator;
-							// «а каждого соседа, который имеет вес 1, мы прибавл€ем +1 к вли€тельности.
-							if (cur_n2.weight == 1)
-								influence += 1;
+							influence += 0.5; // + 0.5 за близость к BMI
+							std::vector<GNode *>::iterator n2_iterator = cur_neighbour.neighbours.begin();
+							for (; n2_iterator != cur_neighbour.neighbours.end(); n2_iterator++)
+							{
+								GNode &cur_n2 = **n2_iterator;
+								// «а каждого соседа, который имеет вес 1, мы прибавл€ем +1 к вли€тельности.
+								if (cur_n2.weight == 1)
+									influence += 1;
+							}
 						}
-
 						if (influence > max_influence)
 							max_influence = influence;
 					}
@@ -1026,17 +1046,17 @@ void CRoom::n_train()
 							continue;
 						float influence = 0;
 						if (min_len > SLength(GNodeToCNode(cur_neighbour), GNodeToCNode(*BMI)))
-							influence += 0.5; // + 0.5 за близость к BMI
-
-						std::vector<GNode *>::iterator n2_iterator = cur_neighbour.neighbours.begin();
-						for (; n2_iterator != cur_neighbour.neighbours.end(); n2_iterator++)
 						{
-							GNode &cur_n2 = **n2_iterator;
-							// «а каждого соседа, который имеет вес 1, мы прибавл€ем +1 к вли€тельности.
-							if (cur_n2.weight == 1)
-								influence += 1;
+							influence += 0.5; // + 0.5 за близость к BMI
+							std::vector<GNode *>::iterator n2_iterator = cur_neighbour.neighbours.begin();
+							for (; n2_iterator != cur_neighbour.neighbours.end(); n2_iterator++)
+							{
+								GNode &cur_n2 = **n2_iterator;
+								// «а каждого соседа, который имеет вес 1, мы прибавл€ем +1 к вли€тельности.
+								if (cur_n2.weight == 1)
+									influence += 1;
+							}
 						}
-
 						if (influence == max_influence)
 						{
 							BMU = *neighbour_iterator;
@@ -1046,14 +1066,8 @@ void CRoom::n_train()
 
 
 					// —читаем сумму рассто€ний от BMU и от текущей точки до всех входов
-					float distSumNode = 0;
-					float distSumBMU = 0;
-					std::vector<GNode>::const_iterator nn_it = Network.begin();
-					for (; nn_it != Network.begin() + n; nn_it++)
-					{
-						distSumNode += SLength(GNodeToCNode(cur_node), GNodeToCNode(*nn_it));
-						distSumBMU += SLength(GNodeToCNode(*BMU), GNodeToCNode(*nn_it));
-					}
+					float distSumNode = IDistSum(&cur_node);
+					float distSumBMU = IDistSum(BMU);
 					// ≈сли сумма рассто€ний от BMU больше или равна сумме рассто€ний от текущей точки,
 					// то нашу точку не двигаем, т.к. она как бы одновременно ближе ко всем входам.
 					if (distSumBMU >= distSumNode)
@@ -1079,6 +1093,10 @@ void CRoom::n_train()
 									f = 1;
 									break;
 								}
+								else
+								{
+
+								}
 							}
 						}
 						if (f)
@@ -1092,12 +1110,21 @@ void CRoom::n_train()
 						continue;
 					}
 
-					// ¬ыбран единственный нейрон-победитель, "двигаемс€" к нему, удал€€ текущий нейрон
-					std::cout << "> Moving towards BMU..." << endl;
-					BMU->weight = 1;
-					RemoveNode(net_iterator);
-					net_iterator = Network.begin() + n;
-					cng += 1;
+					if (!isInput(BMU))
+					{
+						// ¬ыбран единственный нейрон-победитель, "двигаемс€" к нему, удал€€ текущий нейрон
+						std::cout << "> Moving towards BMU..." << endl;
+						BMU->weight = 1;
+						RemoveNode(&*net_iterator);
+						net_iterator = Network.begin() + n;
+						cng += 1;
+					}
+					else
+					{
+						net_iterator++;
+						continue;
+					}
+					
 				}			
 			}
 		}
@@ -1111,4 +1138,276 @@ void CRoom::n_train()
 	NetworkCheck();
 
 	std::cout << endl << "Training's ended." << endl;
+}
+
+bool CRoom::isInput(GNode *node)
+{
+	std::vector<GNode>::iterator input_iterator = Network.begin();
+	for (int i = 0; i < n; i++)
+	{
+		if (*input_iterator == *node)
+			return true;
+		input_iterator++;
+	}
+	return false;
+}
+
+float CRoom::IDistSum(GNode *node)
+{
+	float sum = 0;
+	std::vector<GNode>::const_iterator input_iterator = Network.begin();
+	for (int i = 0; i < n; i++)
+	{
+		sum += SLength(GNodeToCNode(*node), GNodeToCNode(*input_iterator));
+		input_iterator++;
+	}
+	return sum;
+}
+
+int CRoom::minKey(float key[], bool mstSet[], int V, int target)
+{
+	// Initialize min value
+	float min = std::numeric_limits<float>::infinity();
+	int min_index = -1;
+
+	float min_to_target = std::numeric_limits<float>::infinity();
+
+	for (int v = 0; v < V; v++)
+	{
+		if (mstSet[v] == false 
+			&& key[v] < min)
+		{
+			min = key[v], min_index = v;
+			if (v == target)
+				break;
+		}
+			
+	}
+
+	return min_index;
+}
+
+// A utility function to print the constructed MST stored in parent[]
+int printMST(int parent[], float** graph, int V, int src, fstream &out)
+{
+	printf("Edge   Weight\n");
+	for (int i = 0; i < V; i++)
+	{
+		if (parent[i] != -1)
+		{
+			printf("%d - %d    %f \n", parent[i], i, graph[i][parent[i]]);
+			out << parent[i] << " " << i << std::endl;
+		}
+	}
+	return 0;
+}
+
+float CRoom::SrcToTarget(int src, int target, float **graph, int V, int* visit_cnt, fstream &out, bool write)
+{
+	float path_len = 0;
+
+	int* parent = new int[V]; // Array to store constructed MST
+	for (int i = 0; i < V; i++)
+		parent[i] = -1;
+	float* key = new float[V];   // Key values used to pick minimum weight edge in cut
+	bool* mstSet = new bool[V];  // To represent set of vertices not yet included in MST
+
+								 // Initialize all keys as INFINITE
+	for (int i = 0; i < V; i++)
+		key[i] = std::numeric_limits<float>::infinity(), mstSet[i] = false;
+
+	// Always include first 1st vertex in MST.
+	key[src] = SLength(GNodeToCNode(Network.at(src)), GNodeToCNode(Network.at(target)));
+	parent[src] = -1; // First node is always root of MST 
+	visit_cnt[src]++;
+
+	// The MST will have V vertices
+	int u = src;
+	int f = 0;
+	for (; f != 1;)
+	{
+		// Pick thd minimum key vertex from the set of vertices
+		// not yet included in MST
+		u = minKey(key, mstSet, V, target);
+
+		if (u == -1)
+			break;
+
+		// Add the picked vertex to the MST Set
+		mstSet[u] = true;
+
+		// Update key value and parent index of the adjacent vertices of
+		// the picked vertex. Consider only those vertices which are not yet
+		// included in MST
+		for (int v = 0; v < V; v++)
+		{
+			// graph[u][v] is non zero only for adjacent vertices of m
+			// mstSet[v] is false for vertices not yet included in MST
+			// Update the key only if graph[u][v] is smaller than key[v]
+			if (graph[u][v] && v == target)
+			{
+				parent[v] = u;
+				//key[v] = graph[u][v];
+				key[v] = SLength(GNodeToCNode(Network.at(v)), GNodeToCNode(Network.at(target)));
+				visit_cnt[v]++;
+				path_len += graph[u][v];
+				f = 1;
+				break;
+			}
+		}
+		if (!f)
+		{
+			float min = std::numeric_limits<float>::infinity();
+			for (int v = 0; v < V; v++)
+			{
+				float len = SLength(GNodeToCNode(Network.at(v)), GNodeToCNode(Network.at(target)));
+				if (graph[u][v] && mstSet[v] == false && graph[u][v] < key[v] && len < min)
+				{
+					//min = graph[u][v];
+					min = len;
+				}
+
+			}
+			for (int v = 0; v < V; v++)
+			{
+				float len = SLength(GNodeToCNode(Network.at(v)), GNodeToCNode(Network.at(target)));
+				if (graph[u][v] && mstSet[v] == false && len == min)
+				{
+					parent[v] = u;
+					//key[v] = graph[u][v];
+					key[v] = len;
+					visit_cnt[v]++;
+					path_len += graph[u][v];
+					if (v < n)
+						break;
+				}
+			}
+		}
+	}
+	
+	// print the constructed MST (and write to file)
+	if(write)
+		printMST(parent, graph, V, src, out);
+
+	return path_len;
+}
+
+// Funtion that implements Dijkstra's single source shortest path algorithm
+// for a graph represented using adjacency matrix representation
+// I - параметр, с помощью которого можно регулировать кол-во путей
+// „ем меньше параметр I, тем больше линий будет нарисовано.
+// I = 1 (по-умолчанию)
+void CRoom::findPath(float I)
+{
+	GenerateMatrix();
+	ShowMatrix();
+
+	std::string path_ = f_path_out;
+
+	std::fstream out;
+	out.open(path_, fstream::out);
+	out << "X Y" << std::endl;
+	out.close();
+	out.open(path_, fstream::app);
+
+	int V = Network.size();
+
+	float** graph = new float*[Network.size()];
+	for (int k = 0; k < Network.size(); k++)
+		graph[k] = new float[Network.size()];
+
+	for (int k = 0; k < Network.size(); k++)
+		for (int l = 0; l < Network.size(); l++)
+			graph[k][l] = wMatrix[k][l];
+
+
+	int* visit_cnt = new int[Network.size()];
+	for (int i = 0; i < Network.size(); i++)
+		visit_cnt[i] = 0;
+
+	for (int SRC = 0; SRC < n; SRC++)
+	{
+		for (int TARGET = SRC + 1; TARGET < n; TARGET++)
+		{
+			int src, target;
+			float path_len = std::numeric_limits<float>::infinity();
+			float path_len2 = std::numeric_limits<float>::infinity();
+
+			src = SRC;
+			target = TARGET;
+			path_len = SrcToTarget(src, target, graph, V, visit_cnt, out, 0);
+
+			src = TARGET;
+			target = SRC;
+			path_len2 = SrcToTarget(src, target, graph, V, visit_cnt, out, 0);
+
+			if (path_len < path_len2)
+			{
+				src = SRC;
+				target = TARGET;
+				SrcToTarget(src, target, graph, V, visit_cnt, out, 1);
+			}
+			else
+			{
+				SrcToTarget(src, target, graph, V, visit_cnt, out, 1);
+			}
+		}
+	}
+
+	std::cout << std::endl << "Visit count: " << std::endl;
+	float mean = 0;
+	int nulls = 0;
+	for (int i = 0; i < Network.size(); i++)
+	{
+		std::cout << i << " " << visit_cnt[i] << std::endl;
+		mean += visit_cnt[i];
+		if (visit_cnt[i] == 0) nulls++;
+	}
+	mean = mean / (Network.size());
+	std::cout << "Mean: " << mean << std::endl;
+
+	mean = (int)floor(mean*I + 0.5);
+	std::cout << "Modified Mean (" << I << "): " << mean << std::endl;
+
+	out.close();
+	out.open(path_, fstream::in);
+
+	std::fstream new_path;
+	new_path.open("path.new.txt", fstream::out);
+
+	std::string dummyLine;
+	if (out.is_open() && new_path.is_open())
+	{
+		getline(out, dummyLine);
+		int parent, node;
+		while (out >> parent >> node)
+		{
+			if (visit_cnt[parent] >= mean && visit_cnt[node] >= mean)
+				new_path << parent << " " << node << std::endl;
+			else
+			{
+				if(parent < n && visit_cnt[node] >= mean || node < n && visit_cnt[parent] >= mean)
+					new_path << parent << " " << node << std::endl;
+			}
+		}
+	}
+	out.close();
+	new_path.close();
+
+	new_path.open("path.new.txt", fstream::in);
+	out.open(path_, fstream::out);
+
+	out << "X Y" << std::endl;
+	if (out.is_open() && new_path.is_open())
+	{
+		int parent, node;
+		while (new_path >> parent >> node)
+		{
+			out << parent << " " << node << std::endl;
+		}
+	}
+	new_path.close();
+	out.close();
+
+	remove("path.new.txt");
 }

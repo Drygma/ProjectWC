@@ -1,0 +1,14 @@
+[GENERAL]
+input=C:\Users\user\Sample_folder\input.txt
+output_nodes=C:\Users\user\MATLAB\nodes.txt
+output_path=C:\Users\user\MATLAB\path.txt
+i=0.7
+[/GENERAL]
+[ROOMS]
+number_of_rooms=1
+[ROOM]
+width=3
+length=2
+height=2
+[/ROOM]
+[/ROOMS]

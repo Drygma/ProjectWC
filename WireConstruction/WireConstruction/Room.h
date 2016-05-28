@@ -2,6 +2,8 @@
 
 #include "Node.h"
 #include "GNode.h"
+#include <fstream>
+#include <string>
 #include <vector>
 
 class CRoom
@@ -19,9 +21,11 @@ public:
 
 	float **wMatrix;
 
+	std::string f_path_out;
+
 public:
 	CRoom();
-	CRoom(float w, float l, float h);
+	CRoom(float w, float l, float h, std::string path_out);
 	~CRoom();
 public:
 	// Добавить точку
@@ -41,13 +45,22 @@ public:
 	// Создать соседскую связь между двумя узлами
 	void LinkNeighbours(GNode *T1, GNode *T2);
 	// Удалить узел сети
-	void RemoveNode(std::vector<GNode>::iterator &it);
+	void RemoveNode(GNode *it);
 	// Network Check
 	void NetworkCheck();
 
 	void n_train();
+	void findPath(float I = 1);
 
 private:
 	// Функция для превращения GNode в CNode
 	CNode GNodeToCNode(GNode T);
+	//
+	bool isInput(GNode *node);
+	// Функция для подсчета расстояния от точки до всех входов
+	float IDistSum(GNode *node);
+	// Возвращает длину маршрута
+	float SrcToTarget(int src, int target, float **graph, int V, int* visit_cnt, std::fstream &out, bool write);
+	//
+	int minKey(float key[], bool mstSet[], int V, int target);
 };
