@@ -47,6 +47,7 @@ int main(int argc, char* argv[])
 	std::string f_input;
 	std::string f_output_nodes;
 	std::string f_output_path;
+	float I = 1;
 
 	CRoom *rooms;
 	int N = 0;
@@ -83,6 +84,11 @@ int main(int argc, char* argv[])
 					{
 						f_output_path = line.substr(line.find_first_of("=", 0) + 1);
 						std::cout << "Input 'path' file: " << f_output_path << std::endl;
+					}
+					else if (!line.substr(0, line.find_first_of("=", 0)).compare("i"))
+					{
+						I = atof(line.substr(line.find_first_of("=", 0) + 1).c_str());
+						std::cout << "'I' parameter: " << I << std::endl;
 					}
 				}
 			}
@@ -208,7 +214,7 @@ int main(int argc, char* argv[])
 			}
 			room.n_train();
 			ExportFile(&room, f_output_nodes);
-			room.findPath(0.7);
+			room.findPath(I);
 		}
 		else
 		{
